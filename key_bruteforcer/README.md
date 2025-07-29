@@ -8,7 +8,7 @@ The old payload which bruteforces the key on the Alarmo itself can be found [her
 
 ### Using the USB payload
 - Build or download the latest USB payload.
-- Run `make bruteforcer` to compile the PC tool.
+- Run `make bruteforcer` (or `make bruteforcer-crypto` when on a non-x86 machine) to compile the PC tool.
 - Hold down the confirm, back and notification button on the Alarmo at the same time.
 - While holding down all three buttons, plug in the USB cable to your PC.  
   The dial button on top of the Alarmo should light up red and a drive should appear on the PC.
