@@ -32,6 +32,7 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
+    // Try to read in AES data from file
     aes_data_t data;
     FILE *f = fopen(argv[1], "rb");
     if (!f) {
@@ -53,41 +54,52 @@ int main(int argc, char const *argv[])
     OpenSSL_add_all_algorithms();
 #endif
 
+    // Save start time
     time_t start_time = time(NULL);
     const uint8_t *iv = &data.iv[0];
     uint8_t full_key[16] = { 0 };
 
     for (int i = 3; i >= 0; i--) {
+        // Start with the least blanked out key data
         const uint8_t *expected = &data.encrypted_parts[i][0];
+
+        // Start guessing
         uint32_t key = 0;
         while (1) {
+            // Fill in the key
             full_key[(i * 4) + 0] = (uint8_t) (key >> 24);
             full_key[(i * 4) + 1] = (uint8_t) (key >> 16);
             full_key[(i * 4) + 2] = (uint8_t) (key >> 8);
             full_key[(i * 4) + 3] = (uint8_t) (key);
 
+            // Encrypting the IV should result in the expected data
             uint8_t result[16];
             aes128_encrypt(full_key, iv, result);
 
             if (memcmp(result, expected, 16) == 0) {
+                // Found key
                 printf("\nFound key part %d / 4: %08x\n", (4 - i), key);
                 break;
             }
 
+            // Make sure we don't overflow
             if (key == ~0) {
                 printf("\nCouldn't find match\n");
                 return 1;
             }
 
+            // Update progress
             if ((key & 0xFFFF) == 0) {
                 printf("\rBruteforcing key part %d / 4... %.1f%% (0x%08x / 0xffffffff)", (4 - i), (key / 4294967296.0) * 100.0f, key);
                 fflush(stdout);
             }
 
+            // Increment test key
             key++;
         }
     }
 
+    // Print output
     printf("Found key! Took %ld seconds.\n", time(NULL) - start_time);
     printf("Key:\t");
     for (int i = 0; i < 16; i++) printf("%02x", full_key[i]);
@@ -110,12 +122,14 @@ static int hex2bin(const char *str, void *bytes, size_t maxsize)
 {
     uint8_t *bytes_ptr = (uint8_t *)bytes;
     size_t bytes_in = 0;
+    // Only accept hex pairs
     size_t len = strlen(str);
 
     if ((len & 1) != 0 || (len / 2) > maxsize)
         return -1;
 
     for (; str[0] != '\0'; str += 2) {
+        // Check for invalid characters
         int char0 = char2bin(str[0]);
         int char1 = char2bin(str[1]);
         if (char0 == -1 || char1 == -1)
@@ -145,7 +159,8 @@ static __m128i aes128_key_expansion(__m128i key, __m128i keygened)
 
 static void aes128_encrypt(const uint8_t *key, const uint8_t *plaintext, uint8_t *ciphertext)
 {
-    __m128i aes_key_schedule[11];
+    // Start by loading the key
+    __m128i aes_key_schedule[11]; // This was one byte short, since that byte wasnt read it didnt cause any errors but it did give me a warn on verbose build as there was no null byte.
     aes_key_schedule[0] = _mm_loadu_si128((const __m128i*) key);
     aes_key_schedule[1] = AES_128_key_exp(aes_key_schedule[0], 0x01);
     aes_key_schedule[2] = AES_128_key_exp(aes_key_schedule[1], 0x02);
