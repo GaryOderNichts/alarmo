@@ -147,7 +147,7 @@ def decrypt(f, outf):
 
     # Read and decrypt the signature
     signature_data = cipher.decrypt(f.read(0x100))
-    signature = int.from_bytes(signature_data)
+    signature = int.from_bytes(signature_data, byteorder='big')
 
     # TODO should the signature be added to the output file?
     # outf.write(signature_data)
