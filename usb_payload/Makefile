@@ -84,8 +84,7 @@ ASFLAGS	:=	$(MACHDEP)
 
 LDFLAGS	=	$(MACHDEP) -specs=nano.specs \
 		-Wl,-Map,$(notdir $*.map) \
-		-Wl,-T $(TOPDIR)/link.ld \
-		-Wl,--no-warn-rwx-segments
+		-Wl,-T $(TOPDIR)/link.ld
 
 LIBS	:=	-lc -lm -lnosys
 
